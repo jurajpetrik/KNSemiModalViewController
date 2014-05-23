@@ -20,6 +20,9 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
 	.transitionStyle         = @"KNSemiModalTransitionStyle",
     .disableCancel           = @"KNSemiModalOptionDisableCancel",
     .backgroundView          = @"KNSemiModelOptionBackgroundView",
+    .scaledBackHeightPercentage          = @"KNSemiModelOptionScaledBackHeightPercentage",
+    .scaledBackWidthPercentage          = @"KNSemiModelOptionScaledBackWidthPercentage",
+
 };
 
 #define kSemiModalViewController           @"PaPQC93kjgzUanz"
@@ -63,55 +66,33 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
      KNSemiModalOptionKeys.shadowOpacity : @(0.8),
      KNSemiModalOptionKeys.transitionStyle : @(KNSemiModalTransitionStyleSlideUp),
      KNSemiModalOptionKeys.disableCancel : @(NO),
+     KNSemiModalOptionKeys.scaledBackHeightPercentage : @(0.95),
+     KNSemiModalOptionKeys.scaledBackWidthPercentage : @(0.9),
 	 }];
 }
 
 #pragma mark Push-back animation group
 
 -(CAAnimationGroup*)animationGroupForward:(BOOL)_forward {
-    // Create animation keys, forwards and backwards
-    CATransform3D t1 = CATransform3DIdentity;
-    t1.m34 = 1.0/-900;
-    t1 = CATransform3DScale(t1, 0.95, 0.95, 1);
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad){
-        // The rotation angle is minor as the view is nearer
-        t1 = CATransform3DRotate(t1, 7.5f*M_PI/180.0f, 1, 0, 0);
-    } else {
-        t1 = CATransform3DRotate(t1, 15.0f*M_PI/180.0f, 1, 0, 0);
-    }
     
-    CATransform3D t2 = CATransform3DIdentity;
-    t2.m34 = t1.m34;
-    double scale = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.parentScale] doubleValue];
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad){
-        // Minor shift to mantai perspective
-        t2 = CATransform3DTranslate(t2, 0, [self parentTarget].frame.size.height*-0.04, 0);
-        t2 = CATransform3DScale(t2, scale, scale, 1);
-    } else {
-        t2 = CATransform3DTranslate(t2, 0, [self parentTarget].frame.size.height*-0.08, 0);
-        t2 = CATransform3DScale(t2, scale, scale, 1);
-    }
+    float scaledBackWidth =[[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.scaledBackWidthPercentage] floatValue];
+    float scaledBackHeight =[[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.scaledBackHeightPercentage] floatValue];
+
+    CABasicAnimation *scaleAnimationX = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
+    scaleAnimationX.toValue = _forward ? [NSNumber numberWithFloat:scaledBackWidth] : [NSNumber numberWithFloat:1.0];
+    scaleAnimationX.fromValue = _forward ? [NSNumber numberWithFloat:1.0] : [NSNumber numberWithFloat:scaledBackWidth];
     
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"transform"];
-    animation.toValue = [NSValue valueWithCATransform3D:t1];
-	CFTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDuration] doubleValue];
-    animation.duration = duration/2;
-    animation.fillMode = kCAFillModeForwards;
-    animation.removedOnCompletion = NO;
-    [animation setTimingFunction:[CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut]];
+    CABasicAnimation *scaleAnimationY = [CABasicAnimation animationWithKeyPath:@"transform.scale.y"];
+    scaleAnimationY.toValue = _forward ? [NSNumber numberWithFloat:scaledBackHeight] : [NSNumber numberWithFloat:1.0];
+    scaleAnimationY.fromValue = _forward ? [NSNumber numberWithFloat:1.0] : [NSNumber numberWithFloat:scaledBackHeight];
     
-    CABasicAnimation *animation2 = [CABasicAnimation animationWithKeyPath:@"transform"];
-    animation2.toValue = [NSValue valueWithCATransform3D:(_forward?t2:CATransform3DIdentity)];
-    animation2.beginTime = animation.duration;
-    animation2.duration = animation.duration;
-    animation2.fillMode = kCAFillModeForwards;
-    animation2.removedOnCompletion = NO;
     
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.fillMode = kCAFillModeForwards;
     group.removedOnCompletion = NO;
-    [group setDuration:animation.duration*2];
-    [group setAnimations:[NSArray arrayWithObjects:animation,animation2, nil]];
+    CFTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDuration] doubleValue];
+    [group setDuration:duration];
+    [group setAnimations:[NSArray arrayWithObjects:scaleAnimationX,scaleAnimationY, nil]];
     return group;
 }
 

@@ -43,6 +43,8 @@ extern const struct KNSemiModalOptionKeys {
 	__unsafe_unretained NSString *transitionStyle;	 // boxed NSNumber - one of the KNSemiModalTransitionStyle values.
     __unsafe_unretained NSString *disableCancel;     // boxed BOOL. default is NO.
     __unsafe_unretained NSString *backgroundView;     // UIView, custom background.
+    __unsafe_unretained NSString *scaledBackHeightPercentage; // float, default is 0.95
+    __unsafe_unretained NSString *scaledBackWidthPercentage; // float, default is 0.90
 } KNSemiModalOptionKeys;
 
 NS_ENUM(NSUInteger, KNSemiModalTransitionStyle) {
