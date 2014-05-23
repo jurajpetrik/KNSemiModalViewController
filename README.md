@@ -1,3 +1,6 @@
+This is fork, changing the navigation from a weird "3d thing" to a simple "shrink" with customizable height and width.
+Modifications by [@IbrahimYildirim](https://github.com/IbrahimYildirim) and [@jurajpetrik](https://github.com/jurajpetrik)
+
 ## UIViewController+KNSemiModal Category
 
 UIViewController+KNSemiModal is an effort to make a replica of **semi-modal view with pushed-back stacked animation** found in the beautiful [Park Guides by National Geographic](http://itunes.apple.com/us/app/national-parks-by-national/id518426085?mt=8) app. You can see this original semi-modal view below.
