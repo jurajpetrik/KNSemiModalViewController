@@ -14,15 +14,16 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
 	.traverseParentHierarchy = @"KNSemiModalOptionTraverseParentHierarchy",
 	.pushParentBack          = @"KNSemiModalOptionPushParentBack",
 	.animationDuration       = @"KNSemiModalOptionAnimationDuration",
+    .animationDurationForModal  = @"KNSemiModalOptionAnimationDurationForModal",
 	.parentAlpha             = @"KNSemiModalOptionParentAlpha",
-    .parentScale              = @"KNSemiModalOptionParentScale",
+    .parentScale             = @"KNSemiModalOptionParentScale",
 	.shadowOpacity           = @"KNSemiModalOptionShadowOpacity",
 	.transitionStyle         = @"KNSemiModalTransitionStyle",
     .disableCancel           = @"KNSemiModalOptionDisableCancel",
     .backgroundView          = @"KNSemiModelOptionBackgroundView",
     .scaledBackHeightPercentage          = @"KNSemiModelOptionScaledBackHeightPercentage",
     .scaledBackWidthPercentage          = @"KNSemiModelOptionScaledBackWidthPercentage",
-
+    
 };
 
 #define kSemiModalViewController           @"PaPQC93kjgzUanz"
@@ -57,18 +58,21 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
 #pragma mark Options and defaults
 
 -(void)kn_registerDefaultsAndOptions:(NSDictionary*)options {
+    
+    //The defaults have been set for the case of showing a full-screen modal
 	[self ym_registerOptions:options defaults:@{
-     KNSemiModalOptionKeys.traverseParentHierarchy : @(YES),
-     KNSemiModalOptionKeys.pushParentBack : @(YES),
-     KNSemiModalOptionKeys.animationDuration : @(0.5),
-     KNSemiModalOptionKeys.parentAlpha : @(0.5),
-     KNSemiModalOptionKeys.parentScale : @(0.8),     
-     KNSemiModalOptionKeys.shadowOpacity : @(0.8),
-     KNSemiModalOptionKeys.transitionStyle : @(KNSemiModalTransitionStyleSlideUp),
-     KNSemiModalOptionKeys.disableCancel : @(NO),
-     KNSemiModalOptionKeys.scaledBackHeightPercentage : @(0.95),
-     KNSemiModalOptionKeys.scaledBackWidthPercentage : @(0.9),
-	 }];
+                                                KNSemiModalOptionKeys.traverseParentHierarchy : @(YES),
+                                                KNSemiModalOptionKeys.pushParentBack : @(YES),
+                                                KNSemiModalOptionKeys.animationDuration : @(0.28),
+                                                KNSemiModalOptionKeys.animationDurationForModal : @(0.28),
+                                                KNSemiModalOptionKeys.parentAlpha : @(0.5),
+                                                KNSemiModalOptionKeys.parentScale : @(0.8),
+                                                KNSemiModalOptionKeys.shadowOpacity : @(0.3),
+                                                KNSemiModalOptionKeys.transitionStyle : @(KNSemiModalTransitionStyleSlideUp),
+                                                KNSemiModalOptionKeys.disableCancel : @(NO),
+                                                KNSemiModalOptionKeys.scaledBackHeightPercentage : @(0.9),
+                                                KNSemiModalOptionKeys.scaledBackWidthPercentage : @(0.9),
+                                                }];
 }
 
 #pragma mark Push-back animation group
@@ -77,7 +81,7 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
     
     float scaledBackWidth =[[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.scaledBackWidthPercentage] floatValue];
     float scaledBackHeight =[[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.scaledBackHeightPercentage] floatValue];
-
+    
     CABasicAnimation *scaleAnimationX = [CABasicAnimation animationWithKeyPath:@"transform.scale.x"];
     scaleAnimationX.toValue = _forward ? [NSNumber numberWithFloat:scaledBackWidth] : [NSNumber numberWithFloat:1.0];
     scaleAnimationX.fromValue = _forward ? [NSNumber numberWithFloat:1.0] : [NSNumber numberWithFloat:scaledBackWidth];
@@ -143,12 +147,12 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
     [self presentSemiViewController:vc withOptions:options completion:nil dismissBlock:nil];
 }
 -(void)presentSemiViewController:(UIViewController*)vc
-					 withOptions:(NSDictionary*)options
+					 withOptions:(NSMutableDictionary*)options
 					  completion:(KNTransitionCompletionBlock)completion
 					dismissBlock:(KNTransitionCompletionBlock)dismissBlock {
     [self kn_registerDefaultsAndOptions:options]; // re-registering is OK
 	UIViewController *targetParentVC = [self kn_parentTargetViewController];
-
+    
 	// implement view controller containment for the semi-modal view controller
 	[targetParentVC addChildViewController:vc];
 	if ([vc respondsToSelector:@selector(beginAppearanceTransition:animated:)]) {
@@ -182,7 +186,7 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
     if (![target.subviews containsObject:view]) {
         // Set associative object
         objc_setAssociatedObject(view, kSemiModalPresentingViewController, self, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
+        
         // Register for orientation changes, so we can update the presenting controller screenshot
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(kn_interfaceOrientationDidChange:)
@@ -239,7 +243,9 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
 		if ([[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.pushParentBack] boolValue]) {
 			[ss.layer addAnimation:[self animationGroupForward:YES] forKey:@"pushedBackAnimation"];
 		}
-		NSTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDuration] doubleValue];
+        
+		NSTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDurationForModal] doubleValue];
+        
         [UIView animateWithDuration:duration animations:^{
             ss.alpha = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.parentAlpha] floatValue];
         }];
@@ -306,14 +312,14 @@ const struct KNSemiModalOptionKeys KNSemiModalOptionKeys = {
         [presentingController dismissSemiModalViewWithCompletion:completion];
         return;
     }
-
+    
     // Correct target for dismissal
     UIView * target = [self parentTarget];
     UIView * modal = [target viewWithTag:kSemiModalModalViewTag];
     UIView * overlay = [target viewWithTag:kSemiModalOverlayTag];
 	NSUInteger transitionStyle = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.transitionStyle] unsignedIntegerValue];
-	NSTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDuration] doubleValue];
-	UIViewController *vc = objc_getAssociatedObject(self, kSemiModalViewController);
+    NSTimeInterval duration = [[self ym_optionOrDefaultForKey:KNSemiModalOptionKeys.animationDurationForModal] doubleValue];
+    UIViewController *vc = objc_getAssociatedObject(self, kSemiModalViewController);
 	KNTransitionCompletionBlock dismissBlock = objc_getAssociatedObject(self, kSemiModalDismissBlock);
 	
 	// Child controller containment
@@ -413,7 +419,17 @@ static char const * const kYMStandardDefaultsTableName = "YMStandardDefaultsTabl
 - (void)ym_registerOptions:(NSDictionary *)options
 				  defaults:(NSDictionary *)defaults
 {
-	objc_setAssociatedObject(self, kYMStandardOptionsTableName, options, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    //In case 'KNSemiModalOptionAnimationDuration' is set and 'KNSemiModalOptionAnimationDurationForModal' is not set,
+    //then 'KNSemiModalOptionAnimationDurationForModal' is set to the same value
+    NSMutableDictionary *tempOptions = [NSMutableDictionary dictionaryWithDictionary:options];
+    if(([options objectForKey:@"KNSemiModalOptionAnimationDuration"] != nil) &&
+       ([options objectForKey:@"KNSemiModalOptionAnimationDurationForModal"] == nil))
+    {
+        [tempOptions setObject:[options objectForKey:@"KNSemiModalOptionAnimationDuration"] forKey:@"KNSemiModalOptionAnimationDurationForModal"];
+    }
+    
+	objc_setAssociatedObject(self, kYMStandardOptionsTableName, tempOptions, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 	objc_setAssociatedObject(self, kYMStandardDefaultsTableName, defaults, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
